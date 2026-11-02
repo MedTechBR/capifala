@@ -1,4 +1,4 @@
-// Interface do Englivara: estado salvo no aparelho, navegação, trilha, sessões de exercício e recompensas.
+// Interface do CapiFala: estado salvo no aparelho, navegação, trilha, sessões de exercício e recompensas.
 (function () {
   const C = window.CURSO, M = window.Motor;
   const CHAVE = 'englivara-v1';
@@ -59,7 +59,7 @@
   };
   const fig = n => `<svg viewBox="0 0 64 64" aria-hidden="true">${FIG[n] || ''}</svg>`;
 
-  // Capi, a capivara com a laranja na cabeça. Desenho próprio do Englivara.
+  // Capi, a capivara com a laranja na cabeça. Desenho próprio do CapiFala.
   function capi(humor = 'feliz', cl = '') {
     const olhos = humor === 'triste'
       ? '<path d="M30 44l10-4M90 44l-10-4" stroke="#20130A" stroke-width="4" stroke-linecap="round"/><circle cx="36" cy="51" r="5" fill="#20130A"/><circle cx="84" cy="51" r="5" fill="#20130A"/>'
@@ -364,7 +364,7 @@
 
   function desenha() {
     if (!E.onboard) { $('#lateral').innerHTML = ''; $('#painel').innerHTML = ''; $('#barra').innerHTML = ''; return renderOnboard(); }
-    $('#lateral').innerHTML = `<div class="marca">${capi('feliz').replace('class="mascote ', 'width="38" height="38" class="')}<span>englivara</span></div>${NAV.map(navItem).join('')}`;
+    $('#lateral').innerHTML = `<div class="marca">${capi('feliz').replace('class="mascote ', 'width="38" height="38" class="')}<span>CapiFala</span></div>${NAV.map(navItem).join('')}`;
     $('#barra').innerHTML = NAV_CEL.map(navItem).join('');
     $('#painel').innerHTML = renderPainel();
     const conteudo = { trilha: renderTrilha, praticar: renderPraticar, missoes: renderMissoes, liga: renderLiga, loja: renderLoja, perfil: renderPerfil, mais: renderMais }[tela]();
@@ -784,10 +784,11 @@
   if (temAudio) speechSynthesis.onvoiceschanged = () => { vozEscolhida = null; };
   if ('serviceWorker' in navigator && location.protocol === 'https:') { try { navigator.serviceWorker.register('sw.js').catch(() => {}); } catch (e) { /* sem service worker aqui */ } }
 
-  window.Englivara = { get sessao() { return S; }, get estado() { return E; }, get liga() { return G; } }; // leitura para os testes no navegador
+  window.CapiFala = { get sessao() { return S; }, get estado() { return E; }, get liga() { return G; } }; // leitura para os testes no navegador
   tique(); desenha(); vaiParaAtual();
   if (window.MTS) MTS.iniciar({
-    app: 'englivara', nome: 'Englivara', pref: 'eg_', vendor: 'vendor/',
+    // A chave interna continua englivara: renomear moveria os dados já salvos na conta.
+    app: 'englivara', nome: 'CapiFala', pref: 'eg_', vendor: 'vendor/',
     cores: { cor: '#5145D6', sobrecor: '#ffffff', fundo: '#F5F6FB', texto: '#1B1E3A', suave: '#565C80', borda: '#DFE2F1', campo: '#ffffff' },
     colecoes: COLECOES,
     ler: lerColecao,

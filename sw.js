@@ -1,5 +1,5 @@
 // Rede primeiro: sem pré-cache, para nunca segurar versão velha. O cache só serve quando está sem internet.
-const CACHE = 'englivara-v1';
+const CACHE = 'capifala-v1';
 self.addEventListener('install', () => self.skipWaiting());
 self.addEventListener('activate', e => e.waitUntil(self.clients.claim()));
 self.addEventListener('fetch', e => {
