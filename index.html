@@ -14,7 +14,7 @@
 <link rel="apple-touch-icon" href="icone-180.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="CapiFala">
-<link rel="stylesheet" href="estilo.css">
+<link rel="stylesheet" href="estilo.css?v=2">
 </head>
 <body>
 <div id="app">
@@ -25,10 +25,20 @@
 </div>
 <div id="camada"></div>
 <div id="avisos" aria-live="polite"></div>
-<script src="curso.js"></script>
-<script src="curso2.js"></script>
-<script src="audio/indice.js"></script>
-<script src="motor.js"></script>
-<script src="app.js"></script>
+<script src="curso.js?v=2"></script>
+<script src="curso2.js?v=2"></script>
+<script src="audio/indice.js?v=2"></script>
+<script src="motor.js?v=2"></script>
+<script src="app.js?v=2"></script>
+<script>
+/* Se um arquivo do app não chegou, avisa em vez de deixar a tela de login girando para sempre. */
+window.addEventListener('load', function () {
+  if (window.CURSO && window.Motor && window.CapiFala) return;
+  document.querySelectorAll('#mtsPortao').forEach(function (x) { x.remove(); });
+  var av = document.createElement('div'); av.id = 'mtsPortao';
+  av.innerHTML = '<div class="mts-cx"><h1>Não consegui abrir o CapiFala</h1><p class="sub">Parte do aplicativo não carregou. Confira a internet e tente de novo.</p><button class="bt" onclick="location.reload()">Tentar de novo</button></div>';
+  document.body.appendChild(av);
+});
+</script>
 </body>
 </html>

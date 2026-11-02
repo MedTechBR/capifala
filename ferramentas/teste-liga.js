@@ -37,31 +37,42 @@ global.fetch = async (url, op) => {
   assert.deepEqual(L.cortes(2), { sobem: 0, caem: 0 });
   assert.deepEqual(L.cortes(15), { sobem: 5, caem: 3 });
 
+  // Acesso: só a conta da lista, com e-mail confirmado. O e-mail real fica só no backend, fora deste repo público.
+  const dona = L.CONTAS[0], outro = 'outra@exemplo.com';
+  const liberada = uid => ({ uid, token: { email: dona, email_verified: true } });
+  assert.deepEqual(await L.executar({ uid: 'x', token: { email: dona.toUpperCase(), email_verified: true } }, { acao: 'acesso' }, seg), { ok: true, motivo: 'ok' });
+  assert.deepEqual(await L.executar({ uid: 'x', token: { email: dona, email_verified: false } }, { acao: 'acesso' }, seg), { ok: false, motivo: 'confirmar' });
+  assert.deepEqual(await L.executar({ uid: 'x', token: { email: outro, email_verified: true } }, { acao: 'acesso' }, seg), { ok: false, motivo: 'negado' });
+  assert.deepEqual(await L.executar({ uid: 'x' }, { acao: 'acesso' }, seg), { ok: false, motivo: 'negado' });
+  await assert.rejects(L.executar({ uid: 'x', token: { email: outro, email_verified: true } }, { xp: 50 }, seg), e => e.code === 'permission-denied');
+  await assert.rejects(L.executar({ uid: 'x', token: { email: dona, email_verified: false } }, { xp: 50 }, seg), e => e.code === 'permission-denied');
+  assert.equal(banco.size, 0, 'conta sem acesso não grava nada');
+
   // Sem XP não ocupa vaga
-  let r = await L.executar({ uid: 'zero' }, { xp: 0 }, seg);
+  let r = await L.executar(liberada('zero'), { xp: 0 }, seg);
   assert.equal(r.lista.length, 0);
   assert.ok(![...banco.keys()].some(k => k.startsWith('ligaEnglivaraVagas')));
 
   // 16 pessoas: a 16ª abre um novo grupo
-  for (let i = 1; i <= 16; i++) r = await L.executar({ uid: 'u' + i }, { xp: i * 10, nome: 'P' + i }, seg);
+  for (let i = 1; i <= 16; i++) r = await L.executar(liberada('u' + i), { xp: i * 10, nome: 'P' + i }, seg);
   assert.equal(r.lista.length, 1, 'a 16ª pessoa fica no grupo 2');
-  r = await L.executar({ uid: 'u15' }, { xp: 150, nome: 'P15' }, seg);
+  r = await L.executar(liberada('u15'), { xp: 150, nome: 'P15' }, seg);
   assert.equal(r.lista.length, 15);
   assert.equal(r.lista[0].nome, 'P15');
   assert.equal(r.lista[0].eu, true);
   assert.ok(r.lista.every(x => !('uid' in x) && !('email' in x)), 'resposta não traz identificador');
 
   // XP não diminui se o aparelho mandar menos
-  r = await L.executar({ uid: 'u15' }, { xp: 3, nome: 'P15' }, seg);
+  r = await L.executar(liberada('u15'), { xp: 3, nome: 'P15' }, seg);
   assert.equal(r.lista[0].xp, 150);
 
   // Virada: primeiro sobe, último desce, e a posição antiga vem na resposta
-  r = await L.executar({ uid: 'u15' }, { xp: 5, nome: 'P15' }, prox);
+  r = await L.executar(liberada('u15'), { xp: 5, nome: 'P15' }, prox);
   assert.deepEqual([r.ultima.pos, r.ultima.total, r.ultima.divisao, r.divisao], [1, 15, 1, 1]);
-  await L.executar({ uid: 'u2' }, { xp: 5 }, prox); // u1 foi o último; u2 é o 14º, zona de queda, mas já está na divisão mínima
-  const u = await L.executar({ uid: 'u1' }, { xp: 0 }, prox);
+  await L.executar(liberada('u2'), { xp: 5 }, prox); // u1 foi o último; u2 é o 14º, zona de queda, mas já está na divisão mínima
+  const u = await L.executar(liberada('u1'), { xp: 0 }, prox);
   assert.deepEqual([u.ultima.pos, u.divisao, u.lista.length], [15, 0, 0]);
-  const again = await L.executar({ uid: 'u15' }, { xp: 9 }, prox);
+  const again = await L.executar(liberada('u15'), { xp: 9 }, prox);
   assert.equal(again.ultima, null, 'o fechamento só é informado uma vez');
   console.log('liga: todas as verificações ok');
 })().catch(e => { console.error(e); process.exit(1); });

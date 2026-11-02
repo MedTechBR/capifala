@@ -8,6 +8,10 @@ cp ../_mtsync/fake-firebase.js _teste/
 ln -s ../audio _teste/audio
 cat > _teste/falsos.js <<'EOF'
 window.__falaTexto = 'hello';
+window.addEventListener('error', e => {
+  const alvo = e.target && e.target.src ? 'carga ' + e.target.src : (e.message + ' ' + e.filename + ':' + e.lineno);
+  const log = JSON.parse(localStorage.__erros || '[]'); log.push(alvo + ' motor=' + !!window.Motor); localStorage.__erros = JSON.stringify(log.slice(-8));
+}, true);
 window.SpeechRecognition = class {
   start() {
     setTimeout(() => {
@@ -22,6 +26,10 @@ window.addEventListener('DOMContentLoaded', () => {
   if (!window.MTS) return;
   window.__ligaChamadas = [];
   MTS.chamar = async (nome, d) => {
+    if (d.acao === 'acesso') {
+      if (localStorage.__acessoRede) throw new Error('sem rede');
+      return JSON.parse(localStorage.__acessoResp || '{"ok":true,"motivo":"ok"}');
+    }
     window.__ligaChamadas.push(d);
     if (window.__ligaOff) throw new Error('sem rede');
     return { semana: 'x', divisao: 1, sobem: 2, caem: 0, ultima: window.__ligaUltima || null,

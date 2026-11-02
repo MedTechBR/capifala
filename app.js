@@ -719,6 +719,13 @@
     meta(v) { E.metaXp = +v; salvar(); desenha(); },
     cfg(v) { E.cfg[v] = !E.cfg[v]; if (v === 'mic' && E.cfg.mic) E.micAte = 0; salvar(); desenha(); },
     sair_conta() { MTS.sair(); },
+    recarregar() { location.reload(); },
+    async enviaConfirmacao(v, el) {
+      el.disabled = true;
+      const m = $('#acessoMsg');
+      try { await MTS.usuario.sendEmailVerification(); m.textContent = 'Link enviado para ' + MTS.usuario.email + '. Confira também o spam.'; }
+      catch (e) { el.disabled = false; m.textContent = 'Não consegui enviar agora. Aguarde um pouco e tente de novo.'; }
+    },
     ligaTentar() { G.carregou = false; desenha(); sincronizaLiga(); },
     onbPasso(v) { onb.passo = +v; renderOnboard(); },
     onbMotivo(v) { E.motivo = v; onb.passo = 2; renderOnboard(); },
@@ -784,6 +791,31 @@
   if (temAudio) speechSynthesis.onvoiceschanged = () => { vozEscolhida = null; };
   if ('serviceWorker' in navigator && location.protocol === 'https:') { try { navigator.serviceWorker.register('sw.js').catch(() => {}); } catch (e) { /* sem service worker aqui */ } }
 
+  /* Acesso: quem decide é o servidor (mtLiga). Sem rede, vale a última liberação desta conta neste aparelho. */
+  async function verificaAcesso(u) {
+    try {
+      await u.getIdToken(true); // token novo: a confirmação do e-mail só aparece nele depois de renovado
+      const r = await MTS.chamar('mtLiga', { acao: 'acesso' });
+      try { if (r.ok) localStorage.setItem('eg_acesso', u.uid); else localStorage.removeItem('eg_acesso'); } catch (e) { /* armazenamento bloqueado */ }
+      if (!r.ok) telaAcesso(r.motivo);
+      return !!r.ok;
+    } catch (e) {
+      let ok = false; try { ok = localStorage.getItem('eg_acesso') === u.uid; } catch (x) { /* armazenamento bloqueado */ }
+      if (!ok) telaAcesso('rede');
+      return ok;
+    }
+  }
+  function telaAcesso(motivo) {
+    const T = {
+      negado: ['Acesso restrito', 'O CapiFala é de uso restrito, e esta conta não tem acesso.', ''],
+      confirmar: ['Confirme seu e-mail', 'Para abrir o CapiFala, confirme o e-mail desta conta. Depois do link, toque em "Já confirmei".', '<button class="bt" data-a="enviaConfirmacao">Enviar link de confirmação</button><button class="bt claro" data-a="recarregar">Já confirmei</button>'],
+      rede: ['Sem conexão', 'Não consegui conferir o acesso desta conta. Confira a internet e tente de novo.', '<button class="bt" data-a="recarregar">Tentar de novo</button>']
+    }[motivo] || ['Acesso restrito', 'Esta conta não tem acesso.', ''];
+    let p = $('#mtsPortao');
+    if (!p) { p = document.createElement('div'); p.id = 'mtsPortao'; document.body.appendChild(p); }
+    p.innerHTML = `<div class="mts-cx"><div style="display:flex;flex-direction:column;gap:12px">${capi(motivo === 'negado' ? 'triste' : 'feliz', 'p')}<h1 id="mtsTit">${T[0]}</h1><p class="sub" id="acessoMsg">${T[1]}</p>${T[2]}<button class="link" data-a="sair_conta">Sair desta conta</button></div></div>`;
+  }
+
   window.CapiFala = { get sessao() { return S; }, get estado() { return E; }, get liga() { return G; } }; // leitura para os testes no navegador
   tique(); desenha(); vaiParaAtual();
   if (window.MTS) MTS.iniciar({
@@ -801,9 +833,10 @@
     },
     limparLocal() {
       // Progresso é da conta: ao sair ou trocar de conta, o aparelho fica limpo e a nuvem não muda.
-      try { localStorage.setItem('englivara-reserva', JSON.stringify(E)); localStorage.removeItem(CHAVE); } catch (e) { /* armazenamento bloqueado */ }
+      try { localStorage.setItem('englivara-reserva', JSON.stringify(E)); localStorage.removeItem(CHAVE); localStorage.removeItem('eg_acesso'); } catch (e) { /* armazenamento bloqueado */ }
       E = novo();
     },
+    verificarAcesso: verificaAcesso,
     aoEntrar() { desenha(); sincronizaLiga(); }
   });
   setInterval(() => { if (!S && !H && E.onboard && !$('#folha')) { const n = E.vidas.n; atualizaVidas(); if (n !== E.vidas.n) { salvar(); desenha(); } } }, 60000);
